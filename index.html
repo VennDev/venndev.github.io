@@ -216,10 +216,6 @@
         function charToNum(char) {
             return charMap.indexOf(char) + startIndex;
         }
-        function numToChar(num) {
-    num = (num + m) % m; // Đảm bảo luôn nằm trong 0–25
-    return charMap[num]; // Dùng bảng chữ cái để lấy ký tự
-                }
 
         /*function numToChar(num) {
             return startIndex == 0 ? charMap[num] : String.fromCharCode(num);
