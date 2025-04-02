@@ -222,11 +222,11 @@
         }
 
         function encryptChar(x) {
-            return e * x + t % m;
+            return (e * x + t) % m;
         }
 
         function decryptChar(y) {
-            return (y - t) * d % m;
+            return ((y - t) * d) % m;
         }
 
         function processMessage(message, mode) {
