@@ -226,7 +226,7 @@
         }
 
         function decryptChar(y) {
-            return ((y - t + m) % m) * d % m;
+            return (y - t) * d % m;
         }
 
         function processMessage(message, mode) {
