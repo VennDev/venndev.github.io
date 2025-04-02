@@ -220,14 +220,23 @@
         function numToChar(num) {
             return startIndex == 0 ? charMap[num] : String.fromCharCode(num);
         }
+        function numToChar(num) {
+          num = (num + m) % m; // Đảm bảo luôn dương
+    return charMap[num]; // Trả về ký tự trong bảng
+}
 
-        function encryptChar(x) {
+function decryptChar(y) {
+    let x = ((y - t) * d) % m;
+    return (x + m) % m; // Tránh số âm
+}
+
+        /*function encryptChar(x) {
             return (e * x + t) % m;
         }
 
         function decryptChar(y) {
             return ((y - t) * d) % m;
-        }
+        }*/
 
         function processMessage(message, mode) {
             let result = '';
