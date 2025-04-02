@@ -218,7 +218,7 @@
         }
 
         function numToChar(num) {
-            return startIndex == 0 ? charMap[num] : charMap[num % (startIndex*2)];
+            return startIndex == 0 ? charMap[num] : charMap[num % 26];
         }
 
         function encryptChar(x) {
