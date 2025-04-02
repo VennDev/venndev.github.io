@@ -216,18 +216,22 @@
         function charToNum(char) {
             return charMap.indexOf(char) + startIndex;
         }
+        function numToChar(num) {
+    num = (num + m) % m; // Đảm bảo luôn nằm trong 0–25
+    return charMap[num]; // Dùng bảng chữ cái để lấy ký tự
+                }
 
-        function numToChar(num) {
+        /*function numToChar(num) {
             return startIndex == 0 ? charMap[num] : String.fromCharCode(num);
-        }
+        }*/
         function numToChar(num) {
-          num = (num + m) % m; // Đảm bảo luôn dương
-    return charMap[num]; // Trả về ký tự trong bảng
+          num = (num + m) % m;
+    return charMap[num];
 }
 
 function decryptChar(y) {
     let x = ((y - t) * d) % m;
-    return (x + m) % m; // Tránh số âm
+    return (x + m) % m;
 }
 
         /*function encryptChar(x) {
