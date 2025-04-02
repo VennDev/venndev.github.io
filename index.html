@@ -217,9 +217,9 @@
             return charMap.indexOf(char) + startIndex;
         }
 
-        function numToChar(num) {
+        /*function numToChar(num) {
             return startIndex == 0 ? charMap[num] : String.fromCharCode(num);
-        }
+        }*/
         function numToChar(num) {
           num = (num + m) % m;
     return charMap[num];
