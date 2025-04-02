@@ -32,7 +32,7 @@
             font-weight: bold;
         }
 
-        #resultTable {
+        #resultTable, #inverseTable {
             width: 60%;
         }
         #resultTable div {
@@ -45,6 +45,9 @@
     <hr>
     <h3>Công thức mã hóa: y = (e*x + t) mod m</h3>
     <h3>Công thức giải mã: x = ((y - t + m) mod m)*d mod m</h3>
+    <h4>Vị trí chữ cái bắt đầu</h4>
+    <input id="startIndex" value="0" style="width: 70%; text-align: center;">
+    <button onclick="startIndex = parseInt(document.getElementById('startIndex').value)">Update Start Index</button>
     <input id="charMap" value="ABCDEFGHIJKLMNOPQRSTUVWXYZ" style="width: 70%; text-align: center;">
     <button onclick="updateCharMap(document.getElementById('charMap').value)">Update Char Map</button>
     <div class="container">
@@ -53,8 +56,8 @@
             <input type="number" id="e-input" value="5">
             <label class="bold" for="t-input">t (default: 3): </label>
             <input type="number" id="t-input" value="3">
-            <label class="bold" for="d-input">d (default: 21): </label>
-            <input type="number" id="d-input" value="21">
+            <label class="bold" for="d-input">d (calculated): </label>
+            <input type="number" id="d-input" value="21" readonly>
             <label class="bold" for="m-input">m (default: 26): </label>
             <input type="number" id="m-input" value="26">
             <label class="bold" for="y-input">y (default: 0): </label>
@@ -62,6 +65,23 @@
             <button onclick="updateConstants()">Update Constants</button>
         </div>
     </div>
+    <br>
+    <h3>Tìm nghịch đảo của e (Finding the inverse of e)</h3>
+    <table id="inverseTable">
+        <thead>
+            <tr>
+                <th>m</th>
+                <th>e</th>
+                <th>r</th>
+                <th>q</th>
+                <th>t1</th>
+                <th>t2</th>
+                <th>t = t1 - q * t2</th>
+            </tr>
+        </thead>
+        <tbody id="inverseTableBody">
+        </tbody>
+    </table>
     <br>
     <label for="inputMessage">Enter Message (A-Z only): </label>
     <input type="text" id="inputMessage" placeholder="e.g., CNTT" oninput="this.value = this.value.toUpperCase()">
@@ -110,22 +130,91 @@
         let m = 26;
         let e = 5;
         let t = 3;
-        let d = 21; // Tính từ 5*d ≡ 1 mod 26
+        let d = 21; // Will be calculated dynamically
+        let startIndex = 0;
 
         function updateCharMap(map) {
             charMap = map;
         }
 
+        // Function to compute the modular inverse using the Extended Euclidean Algorithm
+        function findModularInverse(e, m) {
+            let a = m, b = e;
+            let t1 = 0, t2 = 1;
+            let steps = [];
+
+            while (b !== 0) {
+                let q = Math.floor(a / b);
+                let r = a % b;
+                let t = t1 - q * t2;
+
+                steps.push({ m: a, e: b, r: r, q: q, t1: t1, t2: t2, t: t });
+
+                a = b;
+                b = r;
+                t1 = t2;
+                t2 = t;
+            }
+
+            // If GCD(a, b) != 1, no modular inverse exists
+            if (a !== 1) {
+                alert("No modular inverse exists because GCD(e, m) ≠ 1");
+                return { d: null, steps: [] };
+            }
+
+            // Ensure d is positive
+            let d = t1 < 0 ? t1 + m : t1;
+            return { d: d, steps: steps };
+        }
+
+        // Function to display the modular inverse steps in a table
+        function displayInverseSteps(steps, d) {
+            const tbody = document.getElementById('inverseTableBody');
+            tbody.innerHTML = ''; // Clear previous content
+
+            // Add each step as a row
+            steps.forEach(step => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${step.m}</td>
+                    <td>${step.e}</td>
+                    <td>${step.r}</td>
+                    <td>${step.q}</td>
+                    <td>${step.t1}</td>
+                    <td>${step.t2}</td>
+                    <td>${step.t}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // Add the final row for d
+            if (d !== null) {
+                const finalRow = document.createElement('tr');
+                finalRow.innerHTML = `<td colspan="7">d = ${steps[steps.length - 1].t1} + ${m} = ${d}</td>`;
+                tbody.appendChild(finalRow);
+            }
+        }
+
         function updateConstants() {
             e = parseInt(document.getElementById('e-input').value);
             t = parseInt(document.getElementById('t-input').value);
-            d = parseInt(document.getElementById('d-input').value);
             m = parseInt(document.getElementById('m-input').value);
+
+            const { d: newD, steps } = findModularInverse(e, m);
+            if (newD !== null) {
+                d = newD;
+                document.getElementById('d-input').value = d;
+                displayInverseSteps(steps, d);
+            } else {
+                document.getElementById('d-input').value = '';
+                document.getElementById('inverseTableBody').innerHTML = '<tr><td colspan="7">No modular inverse exists</td></tr>';
+            }
+
             document.getElementById('dValue').innerText = d;
         }
 
         function charToNum(char) {
-            return charMap.indexOf(char);
+            return charMap.indexOf(char) + startIndex;
         }
 
         function numToChar(num) {
@@ -201,6 +290,11 @@
             const { result: encrypted, numbers: encryptedNumbers } = processMessage(decrypted, 'encrypt');
             displayResult(decrypted, encrypted, encryptedNumbers, decrypted, decryptedNumbers);
         }
+
+        // Initialize the inverse table on page load
+        window.onload = function() {
+            updateConstants();
+        };
 
         setInterval(function() {
             document.getElementById('eValue').innerText = e;
