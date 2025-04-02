@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <title>Simple Asymmetric Encryption</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+            font-size: 13px;
+        }
+        table {
+            border-collapse: collapse;
+            margin: 20px auto;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        input, button {
+            margin: 10px;
+            padding: 5px;
+        }
+        .bold {
+            font-weight: bold;
+        }
+
+        #resultTable {
+            width: 60%;
+        }
+        #resultTable div {
+            display: inline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Asymmetric Encryption</h1>
+    <hr>
+    <h3>Công thức mã hóa: y = (e*x + t) mod m</h3>
+    <h3>Công thức giải mã: x = ((y - t + m) mod m)*d mod m</h3>
+    <input id="charMap" value="ABCDEFGHIJKLMNOPQRSTUVWXYZ" style="width: 70%; text-align: center;">
+    <button onclick="updateCharMap(document.getElementById('charMap').value)">Update Char Map</button>
+    <div class="container">
+        <div class="row">
+            <label class="bold" for="e-input">e (default: 5): </label>
+            <input type="number" id="e-input" value="5">
+            <label class="bold" for="t-input">t (default: 3): </label>
+            <input type="number" id="t-input" value="3">
+            <label class="bold" for="d-input">d (default: 21): </label>
+            <input type="number" id="d-input" value="21">
+            <label class="bold" for="m-input">m (default: 26): </label>
+            <input type="number" id="m-input" value="26">
+            <label class="bold" for="y-input">y (default: 0): </label>
+            <input type="number" id="y-input" value="0">
+            <button onclick="updateConstants()">Update Constants</button>
+        </div>
+    </div>
+    <br>
+    <label for="inputMessage">Enter Message (A-Z only): </label>
+    <input type="text" id="inputMessage" placeholder="e.g., CNTT" oninput="this.value = this.value.toUpperCase()">
+    <br>
+    <button onclick="encryptMessage()">Encrypt</button>
+    <button onclick="decryptMessage()">Decrypt</button>
+
+    <h3>Results</h3>
+    <table id="resultTable" class="table">
+        <thead class="thead-light">
+            <tr>
+                <th>Step</th>
+                <th id="messageHeader"></th>
+            </tr>
+        </thead>
+        <tbody id="resultTableBody" class="table-striped">
+            <tr>
+                <td>Message</td>
+                <td id="messageResult"></td>
+            </tr>
+            <tr>
+                <td>Message (Numbers)</td>
+                <td id="messageNumbers"></td>
+            </tr>
+            <tr>
+                <td>Encrypt y = <div id="eValue"></div>x + <div id="tValue"></div> mod <div id="mValue"></div></td>
+                <td id="encryptResult"></td>
+            </tr>
+            <tr>
+                <td>Encrypt (Numbers)</td>
+                <td id="encryptNumbers"></td>
+            </tr>
+            <tr>
+                <td>Decrypt x = (y - <div id="tValue2"></div>) * <div id="dValue"></div> mod <div id="mValue2"></div></td>
+                <td id="decryptResult"></td>
+            </tr>
+            <tr>
+                <td>Decrypt (Numbers)</td>
+                <td id="decryptNumbers"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        let charMap = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        let m = 26;
+        let e = 5;
+        let t = 3;
+        let d = 21; // Tính từ 5*d ≡ 1 mod 26
+
+        function updateCharMap(map) {
+            charMap = map;
+        }
+
+        function updateConstants() {
+            e = parseInt(document.getElementById('e-input').value);
+            t = parseInt(document.getElementById('t-input').value);
+            d = parseInt(document.getElementById('d-input').value);
+            m = parseInt(document.getElementById('m-input').value);
+            document.getElementById('dValue').innerText = d;
+        }
+
+        function charToNum(char) {
+            return charMap.indexOf(char);
+        }
+
+        function numToChar(num) {
+            return charMap[num];
+        }
+
+        function encryptChar(x) {
+            return (e * x + t) % m;
+        }
+
+        function decryptChar(y) {
+            return ((y - t + m) % m) * d % m;
+        }
+
+        function processMessage(message, mode) {
+            let result = '';
+            let numbers = [];
+            for (let char of message) {
+                if (charMap.includes(char)) {
+                    let x = charToNum(char);
+                    let y = mode === 'encrypt' ? encryptChar(x) : decryptChar(x);
+                    result += numToChar(y);
+                    numbers.push(y);
+                } else {
+                    result += char;
+                    numbers.push('-');
+                }
+            }
+            return { result, numbers };
+        }
+
+        function getNumbers(message) {
+            let numbers = [];
+            for (let char of message) {
+                if (charMap.includes(char)) {
+                    numbers.push(charToNum(char));
+                } else {
+                    numbers.push('-');
+                }
+            }
+            return numbers;
+        }
+
+        function displayResult(message, encrypted, encryptedNumbers, decrypted, decryptedNumbers) {
+            const messageNumbers = getNumbers(message);
+            document.getElementById('messageHeader').innerText = message.split('').join(' ');
+            document.getElementById('messageResult').innerText = message.split('').join(' ');
+            document.getElementById('messageNumbers').innerText = messageNumbers.join(' ');
+            document.getElementById('encryptResult').innerText = encrypted.split('').join(' ');
+            document.getElementById('encryptNumbers').innerText = encryptedNumbers.join(' ');
+            document.getElementById('decryptResult').innerText = decrypted.split('').join(' ');
+            document.getElementById('decryptNumbers').innerText = decryptedNumbers.join(' ');
+        }
+
+        function encryptMessage() {
+            const message = document.getElementById('inputMessage').value.toUpperCase();
+            if (!message.match(/^[A-Z]+$/)) {
+                alert("Please enter a valid message with letters A-Z only.");
+                return;
+            }
+            const { result: encrypted, numbers: encryptedNumbers } = processMessage(message, 'encrypt');
+            const { result: decrypted, numbers: decryptedNumbers } = processMessage(encrypted, 'decrypt');
+            displayResult(message, encrypted, encryptedNumbers, decrypted, decryptedNumbers);
+        }
+
+        function decryptMessage() {
+            const message = document.getElementById('inputMessage').value.toUpperCase();
+            if (!message.match(/^[A-Z]+$/)) {
+                alert("Please enter a valid message with letters A-Z only.");
+                return;
+            }
+            const { result: decrypted, numbers: decryptedNumbers } = processMessage(message, 'decrypt');
+            const { result: encrypted, numbers: encryptedNumbers } = processMessage(decrypted, 'encrypt');
+            displayResult(decrypted, encrypted, encryptedNumbers, decrypted, decryptedNumbers);
+        }
+
+        setInterval(function() {
+            document.getElementById('eValue').innerText = e;
+            document.getElementById('tValue').innerText = t;
+            document.getElementById('mValue').innerText = m;
+            document.getElementById('tValue2').innerText = t;
+            document.getElementById('mValue2').innerText = m;
+            document.getElementById('mValue3').innerText = m;
+            document.getElementById('dValue').innerText = d;
+            document.getElementById('mValue4').innerText = m;
+            document.getElementById('charMap').innerText = charMap;
+        }, 1000);
+    </script>
+</body>
+</html>
