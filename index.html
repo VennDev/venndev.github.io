@@ -269,14 +269,6 @@
             document.getElementById('decryptNumbers').innerText = decryptedNumbers.join(' ');
         }
 
-        function encryptMessage(messageNumbers) {
-            return messageNumbers.map(x => encrypt(x));
-        }
-
-        function decryptMessage(encryptedNumbers) {
-            return encryptedNumbers.map(y => decrypt(y));
-        }
-
         function encryptMessage() {
             const message = document.getElementById('inputMessage').value.toUpperCase();
             if (!message.match(/^[A-Z]+$/)) {
