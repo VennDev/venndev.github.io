@@ -218,7 +218,7 @@
         }
 
         function numToChar(num) {
-            return charMap[num];
+            return charMap[num % charMap.length];
         }
 
         function encryptChar(x) {
@@ -267,6 +267,14 @@
             document.getElementById('encryptNumbers').innerText = encryptedNumbers.join(' ');
             document.getElementById('decryptResult').innerText = decrypted.split('').join(' ');
             document.getElementById('decryptNumbers').innerText = decryptedNumbers.join(' ');
+        }
+
+        function encryptMessage(messageNumbers) {
+            return messageNumbers.map(x => encrypt(x));
+        }
+
+        function decryptMessage(encryptedNumbers) {
+            return encryptedNumbers.map(y => decrypt(y));
         }
 
         function encryptMessage() {
