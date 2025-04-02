@@ -218,7 +218,7 @@
         }
 
         function numToChar(num) {
-            return startIndex == 0 ? charMap[num] : charMap[String.fromCharCode(startIndex + (num % 26))];
+            return startIndex == 0 ? charMap[num] : String.fromCharCode(num);
         }
 
         function encryptChar(x) {
