@@ -218,7 +218,7 @@
         }
 
         function numToChar(num) {
-            return charMap[num % charMap.length];
+            return charMap[num % startIndex];
         }
 
         function encryptChar(x) {
@@ -226,7 +226,7 @@
         }
 
         function decryptChar(y) {
-            return (y - t) * d % m;
+            return ((y - t) * d) % m;
         }
 
         function processMessage(message, mode) {
