@@ -126,7 +126,7 @@
 
     <script>
         let charMap = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        let m = charMap.length; // Set m to match charMap length
+        let m = 26; // Allow custom m
         let e = 5;
         let t = 3;
         let d = 21; // Will be calculated dynamically
@@ -134,8 +134,6 @@
 
         function updateCharMap(map) {
             charMap = map;
-            m = charMap.length; // Update m to match charMap length
-            document.getElementById('m-input').value = m; // Update the input field
             updateConstants(); // Recalculate d
         }
 
@@ -198,8 +196,7 @@
         function updateConstants() {
             e = parseInt(document.getElementById('e-input').value);
             t = parseInt(document.getElementById('t-input').value);
-            m = charMap.length; // Enforce m to match charMap length
-            document.getElementById('m-input').value = m; // Update the input field to reflect the enforced value
+            m = parseInt(document.getElementById('m-input').value);
 
             const { d: newD, steps } = findModularInverse(e, m);
             if (newD !== null) {
@@ -214,13 +211,14 @@
         }
 
         function charToNum(char) {
-            return charMap.indexOf(char);
+            return charMap.indexOf(char) + startIndex;
         }
 
         function numToChar(num) {
-            num = (num + m) % m;
-            num = num % charMap.length;
-            return charMap[num];
+            let index = (num - startIndex + m) % m;
+            index = index % charMap.length;
+            if (index < 0) index += charMap.length;
+            return charMap[index];
         }
 
         function encryptChar(x) {
@@ -229,7 +227,11 @@
 
         function decryptChar(y) {
             let x = ((y - t) * d) % m;
-            return (x + m) % m;
+            x = (x + m) % m;
+            let range = charMap.length;
+            let minVal = startIndex;
+            x = minVal + (x % range);
+            return x;
         }
 
         function processMessage(message, mode) {
@@ -237,18 +239,28 @@
             let numbers = [];
             for (let char of message) {
                 if (charMap.includes(char)) {
-                    let x = charToNum(char); // Get the raw index (0 to 25)
-                    let y;
                     if (mode === 'encrypt') {
-                        y = encryptChar(x);
+                        let x = charToNum(char); // Use the number with startIndex
+                        let y = encryptChar(x);
+                        result += numToChar(y);
+                        numbers.push(y);
                     } else {
-                        // For decryption, the input char is an encrypted character
-                        // We need to convert it to a number (y) first
-                        let encryptedIndex = charToNum(char);
-                        y = decryptChar(encryptedIndex);
+                        let possibleY = 0;
+                        while (possibleY < m) {
+                            if (numToChar(possibleY) === char) {
+                                break;
+                            }
+                            possibleY++;
+                        }
+                        if (possibleY >= m) {
+                            result += char;
+                            numbers.push('-');
+                            continue;
+                        }
+                        let decryptedX = decryptChar(possibleY);
+                        result += numToChar(decryptedX);
+                        numbers.push(decryptedX);
                     }
-                    result += numToChar(y); // Convert the raw index to a character
-                    numbers.push(y + startIndex); // Add startIndex for display
                 } else {
                     result += char;
                     numbers.push('-');
@@ -261,7 +273,7 @@
             let numbers = [];
             for (let char of message) {
                 if (charMap.includes(char)) {
-                    numbers.push(charToNum(char) + startIndex); // Add startIndex for display
+                    numbers.push(charToNum(char));
                 } else {
                     numbers.push('-');
                 }
@@ -302,7 +314,6 @@
             displayResult(message, encrypted, encryptedNumbers, decrypted, decryptedNumbers);
         }
 
-        // Initialize the inverse table on page load
         window.onload = function () {
             updateConstants();
         };
