@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,48 +13,37 @@
             text-align: center;
             font-size: 13px;
         }
-
         table {
             border-collapse: collapse;
             margin: 20px auto;
         }
-
-        th,
-        td {
+        th, td {
             border: 1px solid black;
             padding: 8px;
         }
-
         th {
             background-color: #f2f2f2;
         }
-
-        input,
-        button {
+        input, button {
             margin: 10px;
             padding: 5px;
         }
-
         .bold {
             font-weight: bold;
         }
-
-        #resultTable,
-        #inverseTable {
+        #resultTable, #inverseTable {
             width: 60%;
         }
-
         #resultTable div {
             display: inline;
         }
     </style>
 </head>
-
 <body>
     <h1>Simple Asymmetric Encryption</h1>
     <hr>
     <h3>Công thức mã hóa: y = (e*x + t) mod m</h3>
-    <h3>Công thức giải mã: x = ((y - t + m) mod m)*d mod m</h3>
+    <h3>Công thức giải mã: x = ((y - t) * d) mod m</h3>
     <h4>Vị trí chữ cái bắt đầu</h4>
     <input id="startIndex" value="0" style="width: 70%; text-align: center;">
     <button onclick="startIndex = parseInt(document.getElementById('startIndex').value)">Update Start Index</button>
@@ -118,8 +106,7 @@
                 <td id="messageNumbers"></td>
             </tr>
             <tr>
-                <td>Encrypt y = <div id="eValue"></div>x + <div id="tValue"></div> mod <div id="mValue"></div>
-                </td>
+                <td>Encrypt y = <div id="eValue"></div>x + <div id="tValue"></div> mod <div id="mValue"></div></td>
                 <td id="encryptResult"></td>
             </tr>
             <tr>
@@ -127,8 +114,7 @@
                 <td id="encryptNumbers"></td>
             </tr>
             <tr>
-                <td>Decrypt x = (y - <div id="tValue2"></div>) * <div id="dValue"></div> mod <div id="mValue2"></div>
-                </td>
+                <td>Decrypt x = (y - <div id="tValue2"></div>) * <div id="dValue"></div> mod <div id="mValue2"></div></td>
                 <td id="decryptResult"></td>
             </tr>
             <tr>
@@ -140,7 +126,7 @@
 
     <script>
         let charMap = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        let m = 26;
+        let m = charMap.length; // Set m to match charMap length
         let e = 5;
         let t = 3;
         let d = 21; // Will be calculated dynamically
@@ -148,6 +134,9 @@
 
         function updateCharMap(map) {
             charMap = map;
+            m = charMap.length; // Update m to match charMap length
+            document.getElementById('m-input').value = m; // Update the input field
+            updateConstants(); // Recalculate d
         }
 
         // Function to compute the modular inverse using the Extended Euclidean Algorithm
@@ -185,7 +174,6 @@
             const tbody = document.getElementById('inverseTableBody');
             tbody.innerHTML = ''; // Clear previous content
 
-            // Add each step as a row
             steps.forEach(step => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
@@ -199,7 +187,7 @@
                 `;
                 tbody.appendChild(row);
             });
-            
+
             if (d !== null) {
                 const finalRow = document.createElement('tr');
                 finalRow.innerHTML = `<td colspan="7">d = ${steps[steps.length - 1].t1} + ${m} = ${d}</td>`;
@@ -210,7 +198,9 @@
         function updateConstants() {
             e = parseInt(document.getElementById('e-input').value);
             t = parseInt(document.getElementById('t-input').value);
-            m = parseInt(document.getElementById('m-input').value);
+            m = charMap.length; // Enforce m to match charMap length
+            document.getElementById('m-input').value = m; // Update the input field to reflect the enforced value
+
             const { d: newD, steps } = findModularInverse(e, m);
             if (newD !== null) {
                 d = newD;
@@ -224,7 +214,7 @@
         }
 
         function charToNum(char) {
-            return charMap.indexOf(char) + startIndex;
+            return charMap.indexOf(char);
         }
 
         function numToChar(num) {
@@ -238,7 +228,8 @@
         }
 
         function decryptChar(y) {
-            return ((y - t) * d) % m;
+            let x = ((y - t) * d) % m;
+            return (x + m) % m;
         }
 
         function processMessage(message, mode) {
@@ -246,10 +237,18 @@
             let numbers = [];
             for (let char of message) {
                 if (charMap.includes(char)) {
-                    let x = charToNum(char);
-                    let y = mode === 'encrypt' ? encryptChar(x) : decryptChar(x);
-                    result += numToChar(y);
-                    numbers.push(y);
+                    let x = charToNum(char); // Get the raw index (0 to 25)
+                    let y;
+                    if (mode === 'encrypt') {
+                        y = encryptChar(x);
+                    } else {
+                        // For decryption, the input char is an encrypted character
+                        // We need to convert it to a number (y) first
+                        let encryptedIndex = charToNum(char);
+                        y = decryptChar(encryptedIndex);
+                    }
+                    result += numToChar(y); // Convert the raw index to a character
+                    numbers.push(y + startIndex); // Add startIndex for display
                 } else {
                     result += char;
                     numbers.push('-');
@@ -262,7 +261,7 @@
             let numbers = [];
             for (let char of message) {
                 if (charMap.includes(char)) {
-                    numbers.push(charToNum(char));
+                    numbers.push(charToNum(char) + startIndex); // Add startIndex for display
                 } else {
                     numbers.push('-');
                 }
@@ -300,7 +299,7 @@
             }
             const { result: decrypted, numbers: decryptedNumbers } = processMessage(message, 'decrypt');
             const { result: encrypted, numbers: encryptedNumbers } = processMessage(decrypted, 'encrypt');
-            displayResult(decrypted, encrypted, encryptedNumbers, decrypted, decryptedNumbers);
+            displayResult(message, encrypted, encryptedNumbers, decrypted, decryptedNumbers);
         }
 
         // Initialize the inverse table on page load
@@ -314,12 +313,8 @@
             document.getElementById('mValue').innerText = m;
             document.getElementById('tValue2').innerText = t;
             document.getElementById('mValue2').innerText = m;
-            document.getElementById('mValue3').innerText = m;
             document.getElementById('dValue').innerText = d;
-            document.getElementById('mValue4').innerText = m;
-            document.getElementById('charMap').innerText = charMap;
         }, 1000);
     </script>
 </body>
-
 </html>
