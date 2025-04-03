@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,33 +14,43 @@
             text-align: center;
             font-size: 13px;
         }
+
         table {
             border-collapse: collapse;
             margin: 20px auto;
         }
-        th, td {
+
+        th,
+        td {
             border: 1px solid black;
             padding: 8px;
         }
+
         th {
             background-color: #f2f2f2;
         }
-        input, button {
+
+        input,
+        button {
             margin: 10px;
             padding: 5px;
         }
+
         .bold {
             font-weight: bold;
         }
 
-        #resultTable, #inverseTable {
+        #resultTable,
+        #inverseTable {
             width: 60%;
         }
+
         #resultTable div {
             display: inline;
         }
     </style>
 </head>
+
 <body>
     <h1>Simple Asymmetric Encryption</h1>
     <hr>
@@ -107,7 +118,8 @@
                 <td id="messageNumbers"></td>
             </tr>
             <tr>
-                <td>Encrypt y = <div id="eValue"></div>x + <div id="tValue"></div> mod <div id="mValue"></div></td>
+                <td>Encrypt y = <div id="eValue"></div>x + <div id="tValue"></div> mod <div id="mValue"></div>
+                </td>
                 <td id="encryptResult"></td>
             </tr>
             <tr>
@@ -115,7 +127,8 @@
                 <td id="encryptNumbers"></td>
             </tr>
             <tr>
-                <td>Decrypt x = (y - <div id="tValue2"></div>) * <div id="dValue"></div> mod <div id="mValue2"></div></td>
+                <td>Decrypt x = (y - <div id="tValue2"></div>) * <div id="dValue"></div> mod <div id="mValue2"></div>
+                </td>
                 <td id="decryptResult"></td>
             </tr>
             <tr>
@@ -186,8 +199,7 @@
                 `;
                 tbody.appendChild(row);
             });
-
-            // Add the final row for d
+            
             if (d !== null) {
                 const finalRow = document.createElement('tr');
                 finalRow.innerHTML = `<td colspan="7">d = ${steps[steps.length - 1].t1} + ${m} = ${d}</td>`;
@@ -199,7 +211,6 @@
             e = parseInt(document.getElementById('e-input').value);
             t = parseInt(document.getElementById('t-input').value);
             m = parseInt(document.getElementById('m-input').value);
-
             const { d: newD, steps } = findModularInverse(e, m);
             if (newD !== null) {
                 d = newD;
@@ -209,7 +220,6 @@
                 document.getElementById('d-input').value = '';
                 document.getElementById('inverseTableBody').innerHTML = '<tr><td colspan="7">No modular inverse exists</td></tr>';
             }
-
             document.getElementById('dValue').innerText = d;
         }
 
@@ -217,27 +227,19 @@
             return charMap.indexOf(char) + startIndex;
         }
 
-        /*function numToChar(num) {
-            return startIndex == 0 ? charMap[num] : String.fromCharCode(num);
-        }*/
         function numToChar(num) {
-    num = (num + m) % m;
-    num = num % charMap.length; // Add this line
-    return charMap[num];
-}
-
-function decryptChar(y) {
-    let x = ((y - t) * d) % m;
-    return (x + m) % m;
-}
+            num = (num + m) % m;
+            num = num % charMap.length;
+            return charMap[num];
+        }
 
         function encryptChar(x) {
             return (e * x + t) % m;
         }
 
-        /*function decryptChar(y) {
+        function decryptChar(y) {
             return ((y - t) * d) % m;
-        }*/
+        }
 
         function processMessage(message, mode) {
             let result = '';
@@ -302,11 +304,11 @@ function decryptChar(y) {
         }
 
         // Initialize the inverse table on page load
-        window.onload = function() {
+        window.onload = function () {
             updateConstants();
         };
 
-        setInterval(function() {
+        setInterval(function () {
             document.getElementById('eValue').innerText = e;
             document.getElementById('tValue').innerText = t;
             document.getElementById('mValue').innerText = m;
@@ -319,4 +321,5 @@ function decryptChar(y) {
         }, 1000);
     </script>
 </body>
+
 </html>
