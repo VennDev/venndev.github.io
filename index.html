@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <title>RSA Encryption</title>
+    <title>RSA Encryption with Custom Group Size</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -52,12 +52,14 @@
 </head>
 
 <body>
-    <h1>RSA Encryption</h1>
+    <h1>RSA Encryption with Custom Group Size</h1>
     <hr>
     <h3>Công thức mã hóa: y = x^e mod n</h3>
     <h3>Công thức giải mã: x = y^d mod n</h3>
+    <hr>
     <div class="container">
         <div class="row">
+            <h3>MOD</h3>
             <label class="bold" for="mod-input">a: </label>
             <input type="number" id="mod-input" value="0">
             <label class="bold" for="mod-input2">b: </label>
@@ -68,10 +70,12 @@
     </div>
     <div class="container">
         <div class="row">
-            <label class="bold" for="p-input">p (default: 2): </label>
-            <input type="number" id="p-input" value="2">
-            <label class="bold" for="q-input">q (default: 4): </label>
-            <input type="number" id="q-input" value="4">
+            <label class="bold" for="group-size-input">Chia chuỗi mã hóa ra làm mấy? (default: 3): </label>
+            <input type="number" id="group-size-input" value="3" min="1">
+            <label class="bold" for="p-input">p (default: 257): </label>
+            <input type="number" id="p-input" value="257">
+            <label class="bold" for="q-input">q (default: 263): </label>
+            <input type="number" id="q-input" value="263">
             <label class="bold" for="e-input">e (default: 5): </label>
             <input type="number" id="e-input" value="5">
             <label class="bold" for="n-input">n (calculated): </label>
@@ -102,7 +106,7 @@
     </table>
     <br>
     <label for="inputMessage">Enter Message: </label>
-    <input type="text" id="inputMessage" placeholder="e.g., Phan Nhật Nam">
+    <input type="text" id="inputMessage" placeholder="e.g., ThienNam">
     <br>
     <button onclick="encryptMessage()">Encrypt</button>
     <button onclick="decryptMessage()">Decrypt</button>
@@ -121,37 +125,50 @@
                 <td id="messageResult"></td>
             </tr>
             <tr>
+                <td>Message (Groups)</td>
+                <td id="messageGroups"></td>
+            </tr>
+            <tr>
                 <td>Message (Numbers)</td>
                 <td id="messageNumbers"></td>
             </tr>
             <tr>
                 <td>Encrypt y = x^<div id="eValue"></div> mod <div id="nValue"></div>
                 </td>
-                <td id="encryptResult"></td>
+                <td id="encryptSteps"></td>
             </tr>
             <tr>
                 <td>Encrypt (Numbers)</td>
                 <td id="encryptNumbers"></td>
             </tr>
             <tr>
+                <td>Encrypt (Characters)</td>
+                <td id="encryptResult"></td>
+            </tr>
+            <tr>
                 <td>Decrypt x = y^<div id="dValue"></div> mod <div id="nValue2"></div>
                 </td>
-                <td id="decryptResult"></td>
+                <td id="decryptSteps"></td>
             </tr>
             <tr>
                 <td>Decrypt (Numbers)</td>
                 <td id="decryptNumbers"></td>
             </tr>
+            <tr>
+                <td>Decrypt (Characters)</td>
+                <td id="decryptResult"></td>
+            </tr>
         </tbody>
     </table>
 
     <script>
-        let p = 2;
-        let q = 4;
+        let p = 257;
+        let q = 263;
         let n = p * q;
         let phi = (p - 1) * (q - 1);
         let e = 5;
         let d = 0; // Will be calculated
+        let groupSize = 3; // Default group size
 
         // Function to compute the modular inverse using the Extended Euclidean Algorithm
         function findModularInverse(e, phi) {
@@ -213,6 +230,7 @@
             p = parseInt(document.getElementById('p-input').value);
             q = parseInt(document.getElementById('q-input').value);
             e = parseInt(document.getElementById('e-input').value);
+            groupSize = parseInt(document.getElementById('group-size-input').value);
 
             // Compute n and phi(n)
             n = p * q;
@@ -233,28 +251,80 @@
             }
         }
 
-        // Function to map characters to numbers (ASCII values as per Table 1)
+        // Function to map a single character to its ASCII value
         function charToNum(char) {
             return char.charCodeAt(0); // Use ASCII value
         }
 
-        // Function to map numbers back to characters
+        // Function to map a number back to a character
         function numToChar(num) {
             return String.fromCharCode(num);
         }
 
-        // Modular exponentiation for RSA
+        // Function to combine a group of characters into a single number
+        function groupToNum(group) {
+            // Pad the group with spaces if necessary
+            while (group.length < groupSize) {
+                group += ' ';
+            }
+            let num = 0;
+            for (let i = 0; i < groupSize; i++) {
+                num = num * 256 + charToNum(group[i]);
+            }
+            return num;
+        }
+
+        // Function to split a number back into a group of characters
+        function numToGroup(num, size) {
+            let chars = [];
+            for (let i = 0; i < size; i++) {
+                const charNum = num % 256;
+                chars.unshift(numToChar(charNum));
+                num = Math.floor(num / 256);
+            }
+            return chars.join('');
+        }
+
+        // Split the message into groups of specified size
+        function splitIntoGroups(message) {
+            let groups = [];
+            for (let i = 0; i < message.length; i += groupSize) {
+                let group = message.slice(i, i + groupSize);
+                groups.push(group);
+            }
+            return groups;
+        }
+
+        // Modular exponentiation for RSA with step-by-step details
         function modExp(base, exponent, modulus) {
+            let steps = [];
             let result = 1;
             base = base % modulus;
-            while (exponent > 0) {
-                if (exponent & 1) {
+            let originalBase = base;
+            let binaryExponent = exponent.toString(2); // Convert exponent to binary for step-by-step
+            let stepDetail = `Base: ${base}, Exponent: ${exponent} (binary: ${binaryExponent}), Modulus: ${modulus}<br>`;
+
+            for (let i = 0; i < binaryExponent.length; i++) {
+                if (binaryExponent[i] === '1') {
+                    stepDetail += `Step ${i + 1}: result = (result * base) mod ${modulus} = (${result} * ${base}) mod ${modulus} = `;
                     result = (result * base) % modulus;
+                    stepDetail += `${result}<br>`;
                 }
+                stepDetail += `Step ${i + 1}: base = (base * base) mod ${modulus} = (${base} * ${base}) mod ${modulus} = `;
                 base = (base * base) % modulus;
-                exponent = exponent >> 1;
+                stepDetail += `${base}<br>`;
             }
-            return result;
+
+            steps.push(stepDetail);
+            return { result: result, steps: steps };
+        }
+
+        function encryptGroup(groupNum) {
+            return modExp(groupNum, e, n);
+        }
+
+        function decryptGroup(groupNum) {
+            return modExp(groupNum, d, n);
         }
 
         function mod(n, m) {
@@ -268,63 +338,63 @@
             document.getElementById('mod-result').innerText = `Result: ${result}`;
         }
 
-        function encryptChar(x) {
-            return modExp(x, e, n);
-        }
-
-        function decryptChar(y) {
-            return modExp(y, d, n);
-        }
-
         function processMessage(message, mode) {
             let result = '';
             let numbers = [];
-            for (let char of message) {
-                let x = charToNum(char);
+            let steps = [];
+            let groups = splitIntoGroups(message);
+
+            for (let group of groups) {
+                let groupNum = groupToNum(group);
                 if (mode === 'encrypt') {
-                    let y = encryptChar(x);
-                    result += numToChar(y);
+                    let { result: y, steps: encryptSteps } = encryptGroup(groupNum);
+                    result += numToGroup(y, groupSize);
                     numbers.push(y);
+                    steps.push(`Encrypt '${group}' (x = ${groupNum}):<br>${encryptSteps.join('<br>')}`);
                 } else {
-                    let x = decryptChar(x);
-                    result += numToChar(x);
-                    numbers.push(x);
+                    let { result: xDecrypted, steps: decryptSteps } = decryptGroup(groupNum);
+                    result += numToGroup(xDecrypted, groupSize);
+                    numbers.push(xDecrypted);
+                    steps.push(`Decrypt '${group}' (y = ${groupNum}):<br>${decryptSteps.join('<br>')}`);
                 }
             }
-            return { result, numbers };
+            return { result, numbers, steps, groups };
         }
 
-        function getNumbers(message) {
+        function getNumbers(groups) {
             let numbers = [];
-            for (let char of message) {
-                numbers.push(charToNum(char));
+            for (let group of groups) {
+                numbers.push(groupToNum(group));
             }
             return numbers;
         }
 
-        function displayResult(message, encrypted, encryptedNumbers, decrypted, decryptedNumbers) {
-            const messageNumbers = getNumbers(message);
-            document.getElementById('messageHeader').innerText = message.split('').join(' ');
+        function displayResult(message, groups, encrypted, encryptedNumbers, encryptedSteps, decrypted, decryptedNumbers, decryptedSteps) {
+            const messageNumbers = getNumbers(groups);
+            document.getElementById('messageHeader').innerText = groups.join(' ');
             document.getElementById('messageResult').innerText = message.split('').join(' ');
+            document.getElementById('messageGroups').innerText = groups.join(' ');
             document.getElementById('messageNumbers').innerText = messageNumbers.join(' ');
-            document.getElementById('encryptResult').innerText = encrypted.split('').join(' ');
+            document.getElementById('encryptSteps').innerHTML = encryptedSteps.join('<br><br>');
             document.getElementById('encryptNumbers').innerText = encryptedNumbers.join(' ');
-            document.getElementById('decryptResult').innerText = decrypted.split('').join(' ');
+            document.getElementById('encryptResult').innerText = encrypted.split('').join(' ');
+            document.getElementById('decryptSteps').innerHTML = decryptedSteps.join('<br><br>');
             document.getElementById('decryptNumbers').innerText = decryptedNumbers.join(' ');
+            document.getElementById('decryptResult').innerText = decrypted.split('').join(' ');
         }
 
         function encryptMessage() {
             const message = document.getElementById('inputMessage').value;
-            const { result: encrypted, numbers: encryptedNumbers } = processMessage(message, 'encrypt');
-            const { result: decrypted, numbers: decryptedNumbers } = processMessage(encrypted, 'decrypt');
-            displayResult(message, encrypted, encryptedNumbers, decrypted, decryptedNumbers);
+            const { result: encrypted, numbers: encryptedNumbers, steps: encryptedSteps, groups } = processMessage(message, 'encrypt');
+            const { result: decrypted, numbers: decryptedNumbers, steps: decryptedSteps } = processMessage(encrypted, 'decrypt');
+            displayResult(message, groups, encrypted, encryptedNumbers, encryptedSteps, decrypted, decryptedNumbers, decryptedSteps);
         }
 
         function decryptMessage() {
             const message = document.getElementById('inputMessage').value;
-            const { result: decrypted, numbers: decryptedNumbers } = processMessage(message, 'decrypt');
-            const { result: encrypted, numbers: encryptedNumbers } = processMessage(decrypted, 'encrypt');
-            displayResult(message, encrypted, encryptedNumbers, decrypted, decryptedNumbers);
+            const { result: decrypted, numbers: decryptedNumbers, steps: decryptedSteps, groups } = processMessage(message, 'decrypt');
+            const { result: encrypted, numbers: encryptedNumbers, steps: encryptedSteps } = processMessage(decrypted, 'encrypt');
+            displayResult(message, groups, encrypted, encryptedNumbers, encryptedSteps, decrypted, decryptedNumbers, decryptedSteps);
         }
 
         window.onload = function () {
