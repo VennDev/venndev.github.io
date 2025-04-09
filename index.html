@@ -58,6 +58,16 @@
     <h3>Công thức giải mã: x = y^d mod n</h3>
     <div class="container">
         <div class="row">
+            <label class="bold" for="mod-input">a: </label>
+            <input type="number" id="mod-input" value="0">
+            <label class="bold" for="mod-input2">b: </label>
+            <input type="number" id="mod-input2" value="0">
+            <button onclick="modTag()">Calculate</button>
+            <p id="mod-result"></p>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
             <label class="bold" for="p-input">p (default: 2): </label>
             <input type="number" id="p-input" value="2">
             <label class="bold" for="q-input">q (default: 4): </label>
@@ -245,6 +255,17 @@
                 exponent = exponent >> 1;
             }
             return result;
+        }
+
+        function mod(n, m) {
+            return ((n % m) + m) % m;
+        }
+
+        function modTag() {
+            const a = parseInt(document.getElementById('mod-input').value);
+            const b = parseInt(document.getElementById('mod-input2').value);
+            const result = mod(a, b);
+            document.getElementById('mod-result').innerText = `Result: ${result}`;
         }
 
         function encryptChar(x) {
