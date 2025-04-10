@@ -16,13 +16,32 @@
         }
 
         button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
             background-color: var(--btn-bg);
             color: var(--btn-text);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s, color 0.3s;
+            transition: background-color 0.3s;
+        }
+
+        .floating-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 18px;
+            background-color: var(--btn-bg);
+            color: var(--btn-text);
+            border: none;
+            border-radius: 50px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            z-index: 9999;
+            transition: background-color 0.3s;
+        }
+
+        .floating-button:hover {
+            background-color: #0056b3;
         }
 
         a {
@@ -84,7 +103,7 @@
 </head>
 
 <body>
-    <button onclick="toggleDark()">Chuyển chế độ tối</button>
+    <button class="floating-button" onclick="toggleDark()">Chuyển chế độ tối</button>
     <h1>RSA Encryption with Custom Group Size</h1>
     <hr>
     <h3>Công thức mã hóa: y = x^e mod n</h3>
