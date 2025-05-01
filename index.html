@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create JSON Files and Download ZIP</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        textarea, input, select {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 5px;
+            font-size: 14px;
+        }
+        textarea {
+            height: 150px;
+        }
+        button {
+            padding: 8px;
+            font-size: 14px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .item-type-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #customItemType {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Create JSON Files for Minecraft Items</h2>
+        <p>Enter names (one per line):</p>
+        <textarea id="nameList" placeholder="crimson\nhot_crimson\nburning_crimson\nfiery_crimson\ninfernal_crimson"></textarea>
+
+        <p>Select or enter item type:</p>
+        <div class="item-type-container">
+            <select id="itemType" onchange="toggleCustomItemType()">
+                <option value="helmet">Helmet</option>
+                <option value="chestplate">Chestplate</option>
+                <option value="leggings">Leggings</option>
+                <option value="boots">Boots</option>
+                <option value="custom">Custom...</option>
+            </select>
+            <input type="text" id="customItemType" placeholder="Enter custom item type">
+        </div>
+
+        <p>Enter JSON content for the files:</p>
+        <textarea id="jsonContent" placeholder='{
+    "parent": "minecraft:item/leather_helmet",
+    "textures": {
+        "layer0": "minecraft:items/leather_helmet"
+    }
+}'></textarea>
+
+        <button onclick="generateFiles()">Generate and Download ZIP</button>
+    </div>
+
+    <!-- Thư viện JSZip để tạo file ZIP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Thư viện FileSaver để tải file -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script>
+        function toggleCustomItemType() {
+            const itemTypeSelect = document.getElementById('itemType');
+            const customItemTypeInput = document.getElementById('customItemType');
+            if (itemTypeSelect.value === 'custom') {
+                customItemTypeInput.style.display = 'block';
+            } else {
+                customItemTypeInput.style.display = 'none';
+                customItemTypeInput.value = '';
+            }
+        }
+
+        function generateFiles() {
+            // Lấy danh sách tên từ textarea
+            const nameList = document.getElementById('nameList').value.trim().split('\n').filter(name => name.trim() !== '');
+            if (nameList.length === 0) {
+                alert('Please enter at least one name.');
+                return;
+            }
+
+            // Lấy loại item
+            const itemTypeSelect = document.getElementById('itemType');
+            let itemType = itemTypeSelect.value;
+            if (itemType === 'custom') {
+                itemType = document.getElementById('customItemType').value.trim();
+                if (!itemType) {
+                    alert('Please enter a custom item type.');
+                    return;
+                }
+            }
+
+            // Lấy nội dung JSON từ textarea
+            let jsonContent;
+            try {
+                jsonContent = document.getElementById('jsonContent').value.trim();
+                if (!jsonContent) {
+                    alert('Please enter JSON content.');
+                    return;
+                }
+                JSON.parse(jsonContent); // Kiểm tra JSON hợp lệ
+            } catch (e) {
+                alert('Invalid JSON content. Please check your input.\nError: ' + e.message);
+                return;
+            }
+
+            // Tạo instance của JSZip
+            const zip = new JSZip();
+            const crimsonFolder = zip.folder('assets/vitemsmod/models/item/crimson');
+
+            // Tạo file JSON cho từng tên
+            nameList.forEach(name => {
+                const fileName = `${name.trim()}_${itemType}.json`;
+                crimsonFolder.file(fileName, jsonContent);
+            });
+
+            // Tạo file ZIP và tải về
+            zip.generateAsync({ type: 'blob' }).then(blob => {
+                saveAs(blob, 'CrimsonModels.zip');
+            });
+        }
+    </script>
+</body>
+</html>
