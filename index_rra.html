@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <title>Simple Asymmetric Encryption</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+            font-size: 13px;
+        }
+        table {
+            border-collapse: collapse;
+            margin: 20px auto;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        input, button {
+            margin: 10px;
+            padding: 5px;
+        }
+        .bold {
+            font-weight: bold;
+        }
+        #resultTable, #inverseTable {
+            width: 60%;
+        }
+        #resultTable div {
+            display: inline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Asymmetric Encryption</h1>
+    <hr>
+    <h3>Công thức mã hóa: y = (e*x + t) mod m</h3>
+    <h3>Công thức giải mã: x = ((y - t) * d) mod m</h3>
+    <h4>Vị trí chữ cái bắt đầu</h4>
+    <input id="startIndex" value="0" style="width: 70%; text-align: center;">
+    <button onclick="startIndex = parseInt(document.getElementById('startIndex').value)">Update Start Index</button>
+    <input id="charMap" value="ABCDEFGHIJKLMNOPQRSTUVWXYZ111111abcdefghijklmnopqrstuvwxyz" style="width: 70%; text-align: center;">
+    <button onclick="updateCharMap(document.getElementById('charMap').value)">Update Char Map</button>
+    <div class="container">
+        <div class="row">
+            <label class="bold" for="e-input">e (default: 5): </label>
+            <input type="number" id="e-input" value="5">
+            <label class="bold" for="t-input">t (default: 3): </label>
+            <input type="number" id="t-input" value="3">
+            <label class="bold" for="d-input">d (calculated): </label>
+            <input type="number" id="d-input" value="21" readonly>
+            <label class="bold" for="m-input">m (default: 26): </label>
+            <input type="number" id="m-input" value="26">
+            <label class="bold" for="y-input">y (default: 0): </label>
+            <input type="number" id="y-input" value="0">
+            <button onclick="updateConstants()">Update Constants</button>
+        </div>
+    </div>
+    <br>
+    <h3>Tìm nghịch đảo của e (Finding the inverse of e)</h3>
+    <table id="inverseTable">
+        <thead>
+            <tr>
+                <th>m</th>
+                <th>e</th>
+                <th>r</th>
+                <th>q</th>
+                <th>t1</th>
+                <th>t2</th>
+                <th>t = t1 - q * t2</th>
+            </tr>
+        </thead>
+        <tbody id="inverseTableBody">
+        </tbody>
+    </table>
+    <br>
+    <label for="inputMessage">Enter Message (A-Z only): </label>
+    <input type="text" id="inputMessage" placeholder="e.g., CNTT">
+    <br>
+    <button onclick="encryptMessage()">Encrypt</button>
+    <button onclick="decryptMessage()">Decrypt</button>
+
+    <h3>Results</h3>
+    <table id="resultTable" class="table">
+        <thead class="thead-light">
+            <tr>
+                <th>Step</th>
+                <th id="messageHeader"></th>
+            </tr>
+        </thead>
+        <tbody id="resultTableBody" class="table-striped">
+            <tr>
+                <td>Message</td>
+                <td id="messageResult"></td>
+            </tr>
+            <tr>
+                <td>Message (Numbers)</td>
+                <td id="messageNumbers"></td>
+            </tr>
+            <tr>
+                <td>Encrypt y = <div id="eValue"></div>x + <div id="tValue"></div> mod <div id="mValue"></div></td>
+                <td id="encryptResult"></td>
+            </tr>
+            <tr>
+                <td>Encrypt (Numbers)</td>
+                <td id="encryptNumbers"></td>
+            </tr>
+            <tr>
+                <td>Decrypt x = (y - <div id="tValue2"></div>) * <div id="dValue"></div> mod <div id="mValue2"></div></td>
+                <td id="decryptResult"></td>
+            </tr>
+            <tr>
+                <td>Decrypt (Numbers)</td>
+                <td id="decryptNumbers"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        let charMap = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ111111abcdefghijklmnopqrstuvwxyz';
+        let m = 52; // Allow custom m
+        let e = 5;
+        let t = 3;
+        let d = 21; // Will be calculated dynamically
+        let startIndex = 0;
+
+        function updateCharMap(map) {
+            charMap = map;
+            updateConstants(); // Recalculate d
+        }
+
+        // Function to compute the modular inverse using the Extended Euclidean Algorithm
+        function findModularInverse(e, m) {
+            let a = m, b = e;
+            let t1 = 0, t2 = 1;
+            let steps = [];
+
+            while (b !== 0) {
+                let q = Math.floor(a / b);
+                let r = a % b;
+                let t = t1 - q * t2;
+
+                steps.push({ m: a, e: b, r: r, q: q, t1: t1, t2: t2, t: t });
+
+                a = b;
+                b = r;
+                t1 = t2;
+                t2 = t;
+            }
+
+            // If GCD(a, b) != 1, no modular inverse exists
+            if (a !== 1) {
+                alert("No modular inverse exists because GCD(e, m) ≠ 1");
+                return { d: null, steps: [] };
+            }
+
+            // Ensure d is positive
+            let d = t1 < 0 ? t1 + m : t1;
+            return { d: d, steps: steps };
+        }
+
+        // Function to display the modular inverse steps in a table
+        function displayInverseSteps(steps, d) {
+            const tbody = document.getElementById('inverseTableBody');
+            tbody.innerHTML = ''; // Clear previous content
+
+            steps.forEach(step => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${step.m}</td>
+                    <td>${step.e}</td>
+                    <td>${step.r}</td>
+                    <td>${step.q}</td>
+                    <td>${step.t1}</td>
+                    <td>${step.t2}</td>
+                    <td>${step.t}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            if (d !== null) {
+                const finalRow = document.createElement('tr');
+                finalRow.innerHTML = `<td colspan="7">d = ${steps[steps.length - 1].t1} + ${m} = ${d}</td>`;
+                tbody.appendChild(finalRow);
+            }
+        }
+
+        function updateConstants() {
+            e = parseInt(document.getElementById('e-input').value);
+            t = parseInt(document.getElementById('t-input').value);
+            m = parseInt(document.getElementById('m-input').value);
+
+            const { d: newD, steps } = findModularInverse(e, m);
+            if (newD !== null) {
+                d = newD;
+                document.getElementById('d-input').value = d;
+                displayInverseSteps(steps, d);
+            } else {
+                document.getElementById('d-input').value = '';
+                document.getElementById('inverseTableBody').innerHTML = '<tr><td colspan="7">No modular inverse exists</td></tr>';
+            }
+            document.getElementById('dValue').innerText = d;
+        }
+
+        function charToNum(char) {
+            return charMap.indexOf(char) + startIndex;
+        }
+
+        function numToChar(num) {
+            let index = (num - startIndex + m) % m;
+            index = index % charMap.length;
+            if (index < 0) index += charMap.length;
+            return charMap[index];
+        }
+
+        function encryptChar(x) {
+            return (e * x + t) % m;
+        }
+
+        function decryptChar(y) {
+            let x = ((y - t) * d) % m;
+            x = (x + m) % m;
+            let range = charMap.length;
+            let minVal = startIndex;
+            x = minVal + (x % range);
+            return x;
+        }
+
+        function processMessage(message, mode) {
+            let result = '';
+            let numbers = [];
+            for (let char of message) {
+                if (charMap.includes(char)) {
+                    if (mode === 'encrypt') {
+                        let x = charToNum(char); // Use the number with startIndex
+                        let y = encryptChar(x);
+                        result += numToChar(y);
+                        numbers.push(y);
+                    } else {
+                        let possibleY = 0;
+                        while (possibleY < m) {
+                            if (numToChar(possibleY) === char) {
+                                break;
+                            }
+                            possibleY++;
+                        }
+                        if (possibleY >= m) {
+                            result += char;
+                            numbers.push('-');
+                            continue;
+                        }
+                        let decryptedX = decryptChar(possibleY);
+                        result += numToChar(decryptedX);
+                        numbers.push(decryptedX);
+                    }
+                } else {
+                    result += char;
+                    numbers.push('-');
+                }
+            }
+            return { result, numbers };
+        }
+
+        function getNumbers(message) {
+            let numbers = [];
+            for (let char of message) {
+                if (charMap.includes(char)) {
+                    numbers.push(charToNum(char));
+                } else {
+                    numbers.push('-');
+                }
+            }
+            return numbers;
+        }
+
+        function displayResult(message, encrypted, encryptedNumbers, decrypted, decryptedNumbers) {
+            const messageNumbers = getNumbers(message);
+            document.getElementById('messageHeader').innerText = message.split('').join(' ');
+            document.getElementById('messageResult').innerText = message.split('').join(' ');
+            document.getElementById('messageNumbers').innerText = messageNumbers.join(' ');
+            document.getElementById('encryptResult').innerText = encrypted.split('').join(' ');
+            document.getElementById('encryptNumbers').innerText = encryptedNumbers.join(' ');
+            document.getElementById('decryptResult').innerText = decrypted.split('').join(' ');
+            document.getElementById('decryptNumbers').innerText = decryptedNumbers.join(' ');
+        }
+
+        function encryptMessage() {
+            const message = document.getElementById('inputMessage').value;
+            const { result: encrypted, numbers: encryptedNumbers } = processMessage(message, 'encrypt');
+            const { result: decrypted, numbers: decryptedNumbers } = processMessage(encrypted, 'decrypt');
+            displayResult(message, encrypted, encryptedNumbers, decrypted, decryptedNumbers);
+        }
+
+        function decryptMessage() {
+            const message = document.getElementById('inputMessage').value;
+            const { result: decrypted, numbers: decryptedNumbers } = processMessage(message, 'decrypt');
+            const { result: encrypted, numbers: encryptedNumbers } = processMessage(decrypted, 'encrypt');
+            displayResult(message, encrypted, encryptedNumbers, decrypted, decryptedNumbers);
+        }
+
+        window.onload = function () {
+            updateConstants();
+        };
+
+        setInterval(function () {
+            document.getElementById('eValue').innerText = e;
+            document.getElementById('tValue').innerText = t;
+            document.getElementById('mValue').innerText = m;
+            document.getElementById('tValue2').innerText = t;
+            document.getElementById('mValue2').innerText = m;
+            document.getElementById('dValue').innerText = d;
+        }, 1000);
+    </script>
+</body>
+</html>
