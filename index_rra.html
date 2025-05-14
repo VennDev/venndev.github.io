@@ -31,7 +31,7 @@
         .bold {
             font-weight: bold;
         }
-        #resultTable, #inverseTable {
+        #resultTable, #inverseTable, #crtTable {
             width: 60%;
         }
         #resultTable div {
@@ -124,20 +124,77 @@
         </tbody>
     </table>
 
+    <!-- New CRT Section -->
+    <hr>
+    <h2>Chinese Remainder Theorem (CRT) Calculator</h2>
+    <div class="container">
+        <div class="row">
+            <label class="bold" for="m1-input">m1: </label>
+            <input type="number" id="m1-input" value="653">
+            <label class="bold" for="m2-input">m2: </label>
+            <input type="number" id="m2-input" value="359">
+            <label class="bold" for="m3-input">m3: </label>
+            <input type="number" id="m3-input" value="431">
+        </div>
+        <div class="row">
+            <label class="bold" for="d1-input">d1: </label>
+            <input type="number" id="d1-input" value="102">
+            <label class="bold" for="d2-input">d2: </label>
+            <input type="number" id="d2-input" value="138">
+            <label class="bold" for="d3-input">d3: </label>
+            <input type="number" id="d3-input" value="198">
+        </div>
+        <div class="row">
+            <label class="bold" for="c1-input">Coefficient 1: </label>
+            <input type="number" id="c1-input" value="154729">
+            <label class="bold" for="c2-input">Coefficient 2: </label>
+            <input type="number" id="c2-input" value="281443">
+            <label class="bold" for="c3-input">Coefficient 3: </label>
+            <input type="number" id="c3-input" value="234427">
+        </div>
+        <div class="row">
+            <label class="bold" for="k1-input">k1: </label>
+            <input type="number" id="k1-input" value="24">
+            <label class="bold" for="k2-input">k2: </label>
+            <input type="number" id="k2-input" value="85">
+            <label class="bold" for="k3-input">k3: </label>
+            <input type="number" id="k3-input" value="169">
+        </div>
+    </div>
+    <button onclick="calculateCRT()">Calculate CRT</button>
+    <h3>CRT Results</h3>
+    <table id="crtTable" class="table">
+        <thead class="thead-light">
+            <tr>
+                <th>Parameter</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody id="crtTableBody">
+            <tr><td>N = m1 * m2 * m3</td><td id="crtN"></td></tr>
+            <tr><td>e1 = N / m1</td><td id="crtE1"></td></tr>
+            <tr><td>e2 = N / m2</td><td id="crtE2"></td></tr>
+            <tr><td>e3 = N / m3</td><td id="crtE3"></td></tr>
+            <tr><td>x = ((c1*k1*d1) + (c2*k2*d2) + (c3*k3*d3)) mod N</td><td id="crtX"></td></tr>
+            <tr><td>a1 = x mod m1</td><td id="crtA1"></td></tr>
+            <tr><td>a2 = x mod m2</td><td id="crtA2"></td></tr>
+            <tr><td>a3 = x mod m3</td><td id="crtA3"></td></tr>
+        </tbody>
+    </table>
+
     <script>
         let charMap = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ111111abcdefghijklmnopqrstuvwxyz';
-        let m = 52; // Allow custom m
+        let m = 52;
         let e = 5;
         let t = 3;
-        let d = 21; // Will be calculated dynamically
+        let d = 21;
         let startIndex = 0;
 
         function updateCharMap(map) {
             charMap = map;
-            updateConstants(); // Recalculate d
+            updateConstants();
         }
 
-        // Function to compute the modular inverse using the Extended Euclidean Algorithm
         function findModularInverse(e, m) {
             let a = m, b = e;
             let t1 = 0, t2 = 1;
@@ -156,21 +213,18 @@
                 t2 = t;
             }
 
-            // If GCD(a, b) != 1, no modular inverse exists
             if (a !== 1) {
                 alert("No modular inverse exists because GCD(e, m) ≠ 1");
                 return { d: null, steps: [] };
             }
 
-            // Ensure d is positive
             let d = t1 < 0 ? t1 + m : t1;
             return { d: d, steps: steps };
         }
 
-        // Function to display the modular inverse steps in a table
         function displayInverseSteps(steps, d) {
             const tbody = document.getElementById('inverseTableBody');
-            tbody.innerHTML = ''; // Clear previous content
+            tbody.innerHTML = '';
 
             steps.forEach(step => {
                 const row = document.createElement('tr');
@@ -240,7 +294,7 @@
             for (let char of message) {
                 if (charMap.includes(char)) {
                     if (mode === 'encrypt') {
-                        let x = charToNum(char); // Use the number with startIndex
+                        let x = charToNum(char);
                         let y = encryptChar(x);
                         result += numToChar(y);
                         numbers.push(y);
@@ -306,8 +360,52 @@
             displayResult(message, encrypted, encryptedNumbers, decrypted, decryptedNumbers);
         }
 
+        // New CRT Calculation Function
+        function calculateCRT() {
+            // Get input values
+            const m1 = parseInt(document.getElementById('m1-input').value);
+            const m2 = parseInt(document.getElementById('m2-input').value);
+            const m3 = parseInt(document.getElementById('m3-input').value);
+            const d1 = parseInt(document.getElementById('d1-input').value);
+            const d2 = parseInt(document.getElementById('d2-input').value);
+            const d3 = parseInt(document.getElementById('d3-input').value);
+            const c1 = parseInt(document.getElementById('c1-input').value);
+            const c2 = parseInt(document.getElementById('c2-input').value);
+            const c3 = parseInt(document.getElementById('c3-input').value);
+            const k1 = parseInt(document.getElementById('k1-input').value);
+            const k2 = parseInt(document.getElementById('k2-input').value);
+            const k3 = parseInt(document.getElementById('k3-input').value);
+
+            // Calculate N
+            const N = m1 * m2 * m3;
+
+            // Calculate e1, e2, e3
+            const e1 = N / m1;
+            const e2 = N / m2;
+            const e3 = N / m3;
+
+            // Calculate x
+            const x = ((c1 * k1 * d1) + (c2 * k2 * d2) + (c3 * k3 * d3)) % N;
+
+            // Calculate a1, a2, a3
+            const a1 = x % m1;
+            const a2 = x % m2;
+            const a3 = x % m3;
+
+            // Display results
+            document.getElementById('crtN').innerText = N;
+            document.getElementById('crtE1').innerText = e1;
+            document.getElementById('crtE2').innerText = e2;
+            document.getElementById('crtE3').innerText = e3;
+            document.getElementById('crtX').innerText = x;
+            document.getElementById('crtA1').innerText = a1;
+            document.getElementById('crtA2').innerText = a2;
+            document.getElementById('crtA3').innerText = a3;
+        }
+
         window.onload = function () {
             updateConstants();
+            calculateCRT(); // Initialize CRT table with default values
         };
 
         setInterval(function () {
