@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chuyển JSON sang Java cho VShop</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .item-card img {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+        }
+        .item-card {
+            transition: transform 0.2s;
+        }
+        .item-card:hover {
+            transform: scale(1.05);
+        }
+        textarea {
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center py-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Chuyển JSON Vật Phẩm sang Java</h1>
+    
+    <div class="max-w-5xl w-full px-4 mb-8">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Dán JSON Vật Phẩm</h2>
+        <textarea id="jsonInput" rows="10" class="w-full p-4 border rounded-lg bg-white text-gray-800 font-mono" placeholder="Dán JSON mảng vật phẩm vào đây...">[  
+  {  
+    "name": "The Sentient Greatcleaver",  
+    "itemId": "rlcraft:sentient_greatcleaver",  
+    "buyPrice": 10000000,  
+    "sellPrice": 1000000,  
+    "inputId": "sentientGreatcleaverAmount",  
+    "imageSrc": "https://static.wikia.nocookie.net/shivaxis-rlcraft/images/e/ee/The_Sentient_Greatcleaver.png",  
+    "category": "weapons"  
+  },  
+  {  
+    "name": "The Sentient Greatsword",  
+    "itemId": "rlcraft:sentient_greatsword",  
+    "buyPrice": 10000000,  
+    "sellPrice": 1000000,  
+    "inputId": "sentientGreatswordAmount",  
+    "imageSrc": "https://static.wikia.nocookie.net/shivaxis-rlcraft/images/1/17/Weapon_sword_sentient.png",  
+    "category": "weapons"  
+  },  
+  {  
+    "name": "The Sentient Greataxe",  
+    "itemId": "rlcraft:sentient_greataxe",  
+    "buyPrice": 10000000,  
+    "sellPrice": 1000000,  
+    "inputId": "sentientGreataxeAmount",  
+    "imageSrc": "https://static.wikia.nocookie.net/shivaxis-rlcraft/images/8/85/Weapon_axe_sentient.png",  
+    "category": "weapons"  
+  },  
+  {  
+    "name": "The Sentient Scythe",  
+    "itemId": "rlcraft:sentient_scythe",  
+    "buyPrice": 10000000,  
+    "sellPrice": 1000000,  
+    "inputId": "sentientScytheAmount",  
+    "imageSrc": "https://static.wikia.nocookie.net/shivaxis-rlcraft/images/6/6a/Weapon_scythe_sentienttest.png",  
+    "category": "weapons"  
+  },  
+  {  
+    "name": "The Sentient Bow",  
+    "itemId": "rlcraft:sentient_bow",  
+    "buyPrice": 15000000,  
+    "sellPrice": 1000000,  
+    "inputId": "sentientBowAmount",  
+    "imageSrc": "https://static.wikia.nocookie.net/scape-and-run-parasites/images/8/87/Sentient_Bow1.png",  
+    "category": "weapons"  
+  }  
+]</textarea>
+        <button id="convertBtn" class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Chuyển đổi</button>
+    </div>
+
+    <div id="errorMsg" class="max-w-5xl w-full px-4 mb-8 text-red-600 hidden"></div>
+
+    <div id="items-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl w-full px-4 mb-8 hidden"></div>
+    
+    <div id="javaOutput" class="max-w-5xl w-full px-4 hidden">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Code Java Kết Quả</h2>
+        <p class="text-gray-600 mb-2">Sao chép đoạn code này vào file <code>ItemRegistryRLCraftItems.java</code> hoặc thêm vào <code>ItemRegistry</code>:</p>
+        <pre id="javaCode" class="bg-gray-800 text-gray-200 p-4 rounded-lg overflow-x-auto"></pre>
+    </div>
+
+    <script>
+        const convertBtn = document.getElementById('convertBtn');
+        const jsonInput = document.getElementById('jsonInput');
+        const errorMsg = document.getElementById('errorMsg');
+        const itemsContainer = document.getElementById('items-container');
+        const javaOutput = document.getElementById('javaOutput');
+        const javaCode = document.getElementById('javaCode');
+
+        function validateItem(item) {
+            return item.name && typeof item.name === 'string' &&
+                   item.itemId && typeof item.itemId === 'string' &&
+                   typeof item.buyPrice === 'number' &&
+                   typeof item.sellPrice === 'number' &&
+                   item.inputId && typeof item.inputId === 'string' &&
+                   item.imageSrc && typeof item.imageSrc === 'string' &&
+                   item.category && typeof item.category === 'string';
+        }
+
+        function generateJavaCode(items) {
+            return `private static final List<Item> ITEMS = Arrays.asList(\n${items.map(item => 
+                `    new Item("${item.name.replace(/"/g, '\\"')}", "${item.itemId}", ${item.buyPrice}, ${item.sellPrice}, "${item.inputId}", 
+            "${item.imageSrc}", "${item.category.toUpperCase()}_CATEGORY)`).join(',\n')}\n);`;
+        }
+
+        function renderItems(items) {
+            itemsContainer.innerHTML = '';
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'item-card bg-white rounded-lg shadow-lg p-4 flex flex-col items-center';
+                card.innerHTML = `
+                    <img src="${item.imageSrc}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/64?text=Image+Not+Found';">
+                    <h2 class="text-xl font-semibold text-gray-800 mt-2">${item.name}</h2>
+                    <p class="text-gray-600"><strong>Item ID:</strong> ${item.itemId}</p>
+                    <p class="text-gray-600"><strong>Giá mua:</strong> ${item.buyPrice.toLocaleString()} coins</p>
+                    <p class="text-gray-600"><strong>Giá bán:</strong> ${item.sellPrice.toLocaleString()} coins</p>
+                    <p class="text-gray-600"><strong>Input ID:</strong> ${item.inputId}</p>
+                    <p class="text-gray-600"><strong>Danh mục:</strong> ${item.category}</p>
+                `;
+                itemsContainer.appendChild(card);
+            });
+            itemsContainer.classList.remove('hidden');
+        }
+
+        convertBtn.addEventListener('click', () => {
+            errorMsg.classList.add('hidden');
+            itemsContainer.classList.add('hidden');
+            javaOutput.classList.add('hidden');
+
+            try {
+                const items = JSON.parse(jsonInput.value);
+                if (!Array.isArray(items)) {
+                    throw new Error('JSON phải là một mảng các vật phẩm!');
+                }
+                if (items.length === 0) {
+                    throw new Error('Mảng vật phẩm rỗng!');
+                }
+                for (const item of items) {
+                    if (!validateItem(item)) {
+                        throw new Error(`Vật phẩm không hợp lệ: ${JSON.stringify(item)}`);
+                    }
+                }
+
+                // Hiển thị danh sách vật phẩm
+                renderItems(items);
+
+                // Tạo code Java
+                javaCode.textContent = generateJavaCode(items);
+                javaOutput.classList.remove('hidden');
+            } catch (e) {
+                errorMsg.textContent = `Lỗi: ${e.message}`;
+                errorMsg.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
